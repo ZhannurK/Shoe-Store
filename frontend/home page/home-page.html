@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WaveFlow - Streaming Music Reimagined</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1a237e',
+            secondary: '#4a148c',
+            accent: '#7c4dff',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f0c29 0%, #1a237e 50%, #4a148c 100%);
+      min-height: 100vh;
+      color: white;
+    }
+
+    .gradient-text {
+      background: linear-gradient(90deg, #7c4dff 0%, #00bcd4 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .album-card {
+      transition: all 0.3s ease;
+      background: rgba(26, 35, 126, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .album-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(124, 77, 255, 0.3);
+    }
+
+    .player-controls {
+      background: rgba(26, 35, 126, 0.8);
+      backdrop-filter: blur(10px);
+    }
+
+    .wave-animation {
+      position: relative;
+      height: 50px;
+      overflow: hidden;
+    }
+
+    .wave {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100px;
+      background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="%237c4dff"/><path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="%237c4dff"/><path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" fill="%237c4dff"/></svg>');
+      background-size: cover;
+      animation: wave 10s linear infinite;
+    }
+
+    @keyframes wave {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .search-bar {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+    }
+
+    .nav-link {
+      position: relative;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #7c4dff;
+      transition: width 0.3s ease;
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+<!-- Navigation -->
+<nav class="bg-primary/90 backdrop-blur-md fixed w-full z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <div class="flex items-center">
+        <div class="flex-shrink-0 flex items-center">
+          <i class="fas fa-music text-accent text-2xl mr-2"></i>
+          <span class="text-white font-bold text-2xl gradient-text">WaveFlow</span>
+        </div>
+      </div>
+      <div class="hidden md:block">
+        <div class="ml-10 flex items-baseline space-x-8">
+          <a href="#" class="nav-link text-white hover:text-accent px-3 py-2 text-sm font-medium">Discover</a>
+          <a href="#" class="nav-link text-white hover:text-accent px-3 py-2 text-sm font-medium">Genres</a>
+          <a href="#" class="nav-link text-white hover:text-accent px-3 py-2 text-sm font-medium">Playlists</a>
+          <a href="#" class="nav-link text-white hover:text-accent px-3 py-2 text-sm font-medium">Artists</a>
+          <a href="#" class="nav-link text-white hover:text-accent px-3 py-2 text-sm font-medium">Premium</a>
+        </div>
+      </div>
+      <div class="flex items-center">
+        <div class="relative search-bar rounded-full px-4 py-2">
+          <i class="fas fa-search text-gray-300 mr-2"></i>
+          <input type="text" placeholder="Search for songs, artists..." class="bg-transparent border-none focus:outline-none text-white placeholder-gray-300 w-64">
+        </div>
+        <button class="ml-4 bg-accent hover:bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium transition duration-300">
+          Sign In
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div class="flex flex-col md:flex-row items-center">
+    <div class="md:w-1/2 mb-10 md:mb-0">
+      <h1 class="text-5xl font-bold mb-6 leading-tight">
+        <span class="gradient-text">Flow</span> with the music <br> that moves you
+      </h1>
+      <p class="text-lg text-gray-300 mb-8 max-w-lg">
+        Discover millions of songs, curated playlists, and exclusive content.
+        Join WaveFlow today and experience music like never before.
+      </p>
+      <div class="flex space-x-4">
+        <button class="bg-accent hover:bg-purple-600 text-white px-8 py-3 rounded-full text-lg font-medium transition duration-300 flex items-center">
+          <i class="fas fa-play mr-2"></i> Start Listening
+        </button>
+        <button class="border border-accent text-white hover:bg-accent/20 px-8 py-3 rounded-full text-lg font-medium transition duration-300">
+          Learn More
+        </button>
+      </div>
+    </div>
+    <div class="md:w-1/2 relative">
+      <div class="relative max-w-md mx-auto">
+        <div class="absolute -top-10 -left-10 w-64 h-64 rounded-full bg-accent/20 blur-3xl"></div>
+        <div class="absolute -bottom-10 -right-10 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+        <img src="https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80"
+             alt="Music headphones"
+             class="relative z-10 rounded-2xl shadow-2xl w-full">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Wave Divider -->
+<div class="wave-animation">
+  <div class="wave"></div>
+</div>
+
+<!-- Featured Section -->
+<section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div class="flex justify-between items-center mb-10">
+    <h2 class="text-3xl font-bold">Featured Playlists</h2>
+    <a href="#" class="text-accent hover:text-purple-400 flex items-center">
+      View All <i class="fas fa-chevron-right ml-2"></i>
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <!-- Playlist Card 1 -->
+    <div class="album-card rounded-xl p-4 cursor-pointer">
+      <div class="relative mb-4">
+        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+             alt="Playlist cover"
+             class="w-full h-48 object-cover rounded-lg">
+        <div class="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition duration-300">
+          <button class="bg-accent text-white p-3 rounded-full">
+            <i class="fas fa-play text-lg"></i>
+          </button>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold mb-1">Summer Vibes</h3>
+      <p class="text-gray-400 text-sm">Chill beats for sunny days</p>
+      <div class="flex items-center mt-2 text-gray-400 text-xs">
+        <span>32 tracks</span>
+        <span class="mx-2">•</span>
+        <span>2h 14m</span>
+      </div>
+    </div>
+
+    <!-- Playlist Card 2 -->
+    <div class="album-card rounded-xl p-4 cursor-pointer">
+      <div class="relative mb-4">
+        <img src="https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1413&q=80"
+             alt="Playlist cover"
+             class="w-full h-48 object-cover rounded-lg">
+        <div class="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition duration-300">
+          <button class="bg-accent text-white p-3 rounded-full">
+            <i class="fas fa-play text-lg"></i>
+          </button>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold mb-1">Focus Flow</h3>
+      <p class="text-gray-400 text-sm">Concentration booster</p>
+      <div class="flex items-center mt-2 text-gray-400 text-xs">
+        <span>24 tracks</span>
+        <span class="mx-2">•</span>
+        <span>1h 48m</span>
+      </div>
+    </div>
+
+    <!-- Playlist Card 3 -->
+    <div class="album-card rounded-xl p-4 cursor-pointer">
+      <div class="relative mb-4">
+        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+             alt="Playlist cover"
+             class="w-full h-48 object-cover rounded-lg">
+        <div class="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition duration-300">
+          <button class="bg-accent text-white p-3 rounded-full">
+            <i class="fas fa-play text-lg"></i>
+          </button>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold mb-1">Workout Energy</h3>
+      <p class="text-gray-400 text-sm">Pump up your exercise</p>
+      <div class="flex items-center mt-2 text-gray-400 text-xs">
+        <span>18 tracks</span>
+        <span class="mx-2">•</span>
+        <span>1h 12m</span>
+      </div>
+    </div>
+
+    <!-- Playlist Card 4 -->
+    <div class="album-card rounded-xl p-4 cursor-pointer">
+      <div class="relative mb-4">
+        <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+             alt="Playlist cover"
+             class="w-full h-48 object-cover rounded-lg">
+        <div class="absolute inset-0 bg-black/30 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition duration-300">
+          <button class="bg-accent text-white p-3 rounded-full">
+            <i class="fas fa-play text-lg"></i>
+          </button>
+        </div>
+      </div>
+      <h3 class="text-lg font-semibold mb-1">Sleep Sounds</h3>
+      <p class="text-gray-400 text-sm">Calm your mind</p>
+      <div class="flex items-center mt-2 text-gray-400 text-xs">
+        <span>12 tracks</span>
+        <span class="mx-2">•</span>
+        <span>45m</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- New Releases Section -->
+<section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div class="flex justify-between items-center mb-10">
+    <h2 class="text-3xl font-bold">New Releases</h2>
+    <a href="#" class="text-accent hover:text-purple-400 flex items-center">
+      View All <i class="fas fa-chevron-right ml-2"></i>
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Album 1 -->
+    <div class="album-card rounded-xl p-4 cursor-pointer">
+      <div class="flex">
+        <img src="https://images.unsplash.com/photo-1514525253161-7a3d1f432d02?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+             alt="Album cover"
+             class="w-24 h-24 object-cover rounded-lg">
+        <div class="ml-4 flex-1">
+          <h3 class="text-lg font-semibold mb-1">Midnight Dreams</h3>
+          <p class="text-gray-400 text-sm mb-2">The Weeknd</p>
+          <div class="flex items-center text-gray-400 text-xs">
+            <span>12 songs</span>
+            <span class="mx-2">•</span>
+            <span>Released 2 days ago</span>
+          </div>
+        </div>
+        <button class="text-accent hover:text-purple-400 self-center">
+          <i class="fas fa-ellipsis-h"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Album 2 -->
+    <div class="album-card rounded-xl p-4 cursor-pointer">
+      <div class="flex">
+        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+             alt="Album cover"
+             class="w-24 h-24 object-cover rounded-lg">
+        <div class="ml-4 flex-1">
+          <h3 class="text-lg font-semibold mb-1">Electric Feel</h3>
+          <p class="text-gray-400 text-sm mb-2">Daft Punk</p>
+          <div class="flex items-center text-gray-400 text-xs">
+            <span>8 songs</span>
+            <span class="mx-2">•</span>
+            <span>Released 1 week ago</span>
+          </div>
+        </div>
+        <button class="text-accent hover:text-purple-400 self-center">
+          <i class="fas fa-ellipsis-h"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Album 3 -->
+    <div class="album-card rounded-xl p-4 cursor-pointer">
+      <div class="flex">
+        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+             alt="Album cover"
+             class="w-24 h-24 object-cover rounded-lg">
+        <div class="ml-4 flex-1">
+          <h3 class="text-lg font-semibold mb-1">Summer Nights</h3>
+          <p class="text-gray-400 text-sm mb-2">Calvin Harris</p>
+          <div class="flex items-center text-gray-400 text-xs">
+            <span>10 songs</span>
+            <span class="mx-2">•</span>
+            <span>Released 3 days ago</span>
+          </div>
+        </div>
+        <button class="text-accent hover:text-purple-400 self-center">
+          <i class="fas fa-ellipsis-h"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Popular Artists Section -->
+<section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div class="flex justify-between items-center mb-10">
+    <h2 class="text-3xl font-bold">Popular Artists</h2>
+    <a href="#" class="text-accent hover:text-purple-400 flex items-center">
+      View All <i class="fas fa-chevron-right ml-2"></i>
+    </a>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+    <!-- Artist 1 -->
+    <div class="text-center cursor-pointer group">
+      <div class="w-32 h-32 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-accent transition duration-300">
+        <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80"
+             alt="Artist"
+             class="w-full h-full object-cover">
+      </div>
+      <h3 class="font-medium group-hover:text-accent transition duration-300">The Weeknd</h3>
+      <p class="text-gray-400 text-sm">12.5M followers</p>
+    </div>
+
+    <!-- Artist 2 -->
+    <div class="text-center cursor-pointer group">
+      <div class="w-32 h-32 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-accent transition duration-300">
+        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+             alt="Artist"
+             class="w-full h-full object-cover">
+      </div>
+      <h3 class="font-medium group-hover:text-accent transition duration-300">Dua Lipa</h3>
+      <p class="text-gray-400 text-sm">9.2M followers</p>
+    </div>
+
+    <!-- Artist 3 -->
+    <div class="text-center cursor-pointer group">
+      <div class="w-32 h-32 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-accent transition duration-300">
+        <img src="https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1413&q=80"
+             alt="Artist"
+             class="w-full h-full object-cover">
+      </div>
+      <h3 class="font-medium group-hover:text-accent transition duration-300">Post Malone</h3>
+      <p class="text-gray-400 text-sm">15.7M followers</p>
+    </div>
+
+    <!-- Artist 4 -->
+    <div class="text-center cursor-pointer group">
+      <div class="w-32 h-32 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-accent transition duration-300">
+        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+             alt="Artist"
+             class="w-full h-full object-cover">
+      </div>
+      <h3 class="font-medium group-hover:text-accent transition duration-300">Billie Eilish</h3>
+      <p class="text-gray-400 text-sm">18.3M followers</p>
+    </div>
+
+    <!-- Artist 5 -->
+    <div class="text-center cursor-pointer group">
+      <div class="w-32 h-32 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-accent transition duration-300">
+        <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1469&q=80"
+             alt="Artist"
+             class="w-full h-full object-cover">
+      </div>
+      <h3 class="font-medium group-hover:text-accent transition duration-300">Drake</h3>
+      <p class="text-gray-400 text-sm">22.1M followers</p>
+    </div>
+
+    <!-- Artist 6 -->
+    <div class="text-center cursor-pointer group">
+      <div class="w-32 h-32 mx-auto mb-3 rounded-full overflow-hidden border-2 border-transparent group-hover:border-accent transition duration-300">
+        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+             alt="Artist"
+             class="w-full h-full object-cover">
+      </div>
+      <h3 class="font-medium group-hover:text-accent transition duration-300">Ariana Grande</h3>
+      <p class="text-gray-400 text-sm">14.8M followers</p>
+    </div>
+  </div>
+</section>
+
+<!-- Premium CTA Section -->
+<section class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+  <div class="bg-gradient-to-r from-primary to-secondary rounded-3xl p-10 relative overflow-hidden">
+    <div class="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-accent/20 blur-3xl"></div>
+    <div class="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+
+    <div class="relative z-10 flex flex-col md:flex-row items-center">
+      <div class="md:w-1/2 mb-10 md:mb-0">
+        <h2 class="text-4xl font-bold mb-6">Upgrade to <span class="gradient-text">WaveFlow Premium</span></h2>
+        <p class="text-lg text-gray-300 mb-8 max-w-lg">
+          Enjoy ad-free music, offline listening, and high-quality audio.
+          Cancel anytime with no commitment.
+        </p>
+        <ul class="space-y-3 mb-8">
+          <li class="flex items-center">
+            <i class="fas fa-check-circle text-accent mr-3"></i>
+            <span>Ad-free music listening</span>
+          </li>
+          <li class="flex items-center">
+            <i class="fas fa-check-circle text-accent mr-3"></i>
+            <span>Download to listen offline</span>
+          </li>
+          <li class="flex items-center">
+            <i class="fas fa-check-circle text-accent mr-3"></i>
+            <span>High quality audio</span>
+          </li>
+          <li class="flex items-center">
+            <i class="fas fa-check-circle text-accent mr-3"></i>
+            <span>Cancel anytime</span>
+          </li>
+        </ul>
+        <button class="bg-white text-primary hover:bg-gray-100 px-8 py-3 rounded-full text-lg font-medium transition duration-300">
+          Get Premium
+        </button>
+      </div>
+      <div class="md:w-1/2 flex justify-center">
+        <img src="https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80"
+             alt="Premium headphones"
+             class="w-80 h-80 object-cover rounded-xl shadow-2xl">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-primary/90 backdrop-blur-md py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div>
+        <div class="flex items-center mb-4">
+          <i class="fas fa-music text-accent text-2xl mr-2"></i>
+          <span class="text-white font-bold text-2xl gradient-text">WaveFlow</span>
+        </div>
+        <p class="text-gray-300 mb-4">
+          The best way to experience music. Stream millions of songs ad-free with WaveFlow Premium.
+        </p>
+        <div class="flex space-x-4">
+          <a href="#" class="text-gray-300 hover:text-white">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="#" class="text-gray-300 hover:text-white">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="#" class="text-gray-300 hover:text-white">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="#" class="text-gray-300 hover:text-white">
+            <i class="fab fa-youtube"></i>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-white font-medium mb-4">Company</h3>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-gray-300 hover:text-white">About</a></li>
+          <li><a href="#" class="text-gray-300 hover:text-white">Jobs</a></li>
+          <li><a href="#" class="text-gray-300 hover:text-white">For the Record</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-white font-medium mb-4">Communities</h3>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-gray-300 hover:text-white">For Artists</a></li>
+          <li><a href="#" class="text-gray-300 hover:text-white">Developers</a></li>
+          <li><a href="#" class="text-gray-300 hover:text-white">Advertising</a></li>
+          <li><a href="#" class="text-gray-300 hover:text-white">Investors</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-white font-medium mb-4">Useful links</h3>
+        <ul class="space-y-2">
+          <li><a href="#" class="text-gray-300 hover:text-white">Help</a></li>
+          <li><a href="#" class="text-gray-300 hover:text-white">Web Player</a></li>
+          <li><a href="#" class="text-gray-300 hover:text-white">Free Mobile App</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="border-t border-gray-700 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+      <div class="flex space-x-6 mb-4 md:mb-0">
+        <a href="#" class="text-gray-300 hover:text-white text-sm">Legal</a>
+        <a href="#" class="text-gray-300 hover:text-white text-sm">Privacy Center</a>
+        <a href="#" class="text-gray-300 hover:text-white text-sm">Privacy Policy</a>
+        <a href="#" class="text-gray-300 hover:text-white text-sm">Cookies</a>
+      </div>
+      <div class="text-gray-300 text-sm">
+        © 2023 WaveFlow Music
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Music Player -->
+<div class="player-controls fixed bottom-0 left-0 right-0 h-20 border-t border-gray-800">
+  <div class="max-w-7xl mx-auto px-4 h-full flex items-center">
+    <div class="flex items-center w-1/4">
+      <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80"
+           alt="Now playing"
+           class="w-12 h-12 object-cover rounded mr-3">
+      <div>
+        <div class="font-medium text-sm">Blinding Lights</div>
+        <div class="text-gray-400 text-xs">The Weeknd</div>
+      </div>
+      <button class="ml-4 text-gray-400 hover:text-white">
+        <i class="far fa-heart"></i>
+      </button>
+    </div>
+
+    <div class="w-2/4 flex flex-col items-center">
+      <div class="flex items-center space-x-4 mb-2">
+        <button class="text-gray-400 hover:text-white">
+          <i class="fas fa-random"></i>
+        </button>
+        <button class="text-gray-400 hover:text-white">
+          <i class="fas fa-step-backward"></i>
+        </button>
+        <button class="bg-white text-black w-8 h-8 rounded-full flex items-center justify-center hover:scale-105 transition">
+          <i class="fas fa-pause"></i>
+        </button>
+        <button class="text-gray-400 hover:text-white">
+          <i class="fas fa-step-forward"></i>
+        </button>
+        <button class="text-gray-400 hover:text-white">
+          <i class="fas fa-redo"></i>
+        </button>
+      </div>
+      <div class="w-full flex items-center">
+        <span class="text-gray-400 text-xs mr-2">1:23</span>
+        <div class="h-1 bg-gray-700 rounded-full flex-1">
+          <div class="h-full bg-accent rounded-full w-1/3 relative">
+            <div class="absolute -right-1 -top-1 w-3 h-3 bg-white rounded-full opacity-0 hover:opacity-100"></div>
+          </div>
+        </div>
+        <span class="text-gray-400 text-xs ml-2">3:45</span>
+      </div>
+    </div>
+
+    <div class="w-1/4 flex justify-end items-center space-x-4">
+      <button class="text-gray-400 hover:text-white">
+        <i class="fas fa-list"></i>
+      </button>
+      <button class="text-gray-400 hover:text-white">
+        <i class="fas fa-laptop"></i>
+      </button>
+      <button class="text-gray-400 hover:text-white">
+        <i class="fas fa-volume-up"></i>
+      </button>
+      <div class="w-20 h-1 bg-gray-700 rounded-full">
+        <div class="h-full bg-gray-400 rounded-full w-3/4"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const playButton = document.querySelector('.player-controls .fa-pause').parentElement;
+    playButton.addEventListener('click', function() {
+      const icon = this.querySelector('i');
+      if (icon.classList.contains('fa-pause')) {
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+      } else {
+        icon.classList.remove('fa-play');
+        icon.classList.add('fa-pause');
+      }
+    });
+
+    const albumCards = document.querySelectorAll('.album-card');
+    albumCards.forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        const img = this.querySelector('img');
+        const overlay = this.querySelector('.absolute');
+        overlay.style.opacity = '1';
+      });
+
+      card.addEventListener('mouseleave', function() {
+        const overlay = this.querySelector('.absolute');
+        overlay.style.opacity = '0';
+      });
+    });
+  });
+</script>
+</body>
+</html>

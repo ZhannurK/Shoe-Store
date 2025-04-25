@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +19,15 @@ import (
 	"transaction-service/internal/usecase"
 )
 
+var requestCount = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Name: "shoestore_requests_total",
+		Help: "Total number of HTTP requests received",
+	},
+)
+
 func main() {
+	//env
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system variables")
 	}
@@ -26,18 +36,28 @@ func main() {
 	if mongoURI == "" {
 		log.Fatal("MONGO_CONNECT env variable is not set")
 	}
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8088"
 	}
 
+	//repositories / use cases
 	mongoClient := repositories.InitMongo(mongoURI)
 	txRepo := repositories.NewTransactionRepository(mongoClient, "OnlineStore")
 	txUC := usecase.NewTransactionUseCase(txRepo)
 	txHandler := handlers.NewTransactionHandler(txUC)
 
+	//routers
 	r := gin.Default()
+
+	prometheus.MustRegister(requestCount)
+
+	r.Use(func(c *gin.Context) {
+		requestCount.Inc()
+		c.Next()
+	})
+
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	r.POST("/transactions", txHandler.CreateTransaction)
 	r.GET("/transactions/:id", txHandler.GetTransaction)
@@ -45,14 +65,15 @@ func main() {
 	r.DELETE("/transactions/:id", txHandler.DeleteTransaction)
 	r.PATCH("/transactions/:id/status", txHandler.UpdateTransactionStatus)
 
+	//graceful shutdown
 	srv := &http.Server{
-		Addr:    ":" + port,
+		Addr:    "0.0.0.0:" + port,
 		Handler: r,
 	}
 
 	go func() {
 		log.Println("🚀 Transaction service running at :" + port)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()

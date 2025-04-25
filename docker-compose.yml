@@ -3,7 +3,7 @@ version: '3.8'
 services:
   transaction:
     build:
-      context: .
+      context: ./transaction-service
     ports:
       - "8088:8088"
     environment:
@@ -11,7 +11,7 @@ services:
 
   prometheus:
     image: prom/prometheus
-    container_name: prometheus
+    container_name: shoestore-prometheus
     network_mode: bridge
     ports:
       - "9090:9090"
@@ -25,7 +25,7 @@ services:
 
   grafana:
     image: grafana/grafana
-    container_name: grafana
+    container_name: shoestore-grafana
     network_mode: bridge
     depends_on:
       - prometheus

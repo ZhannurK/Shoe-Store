@@ -1,6 +1,14 @@
 version: '3.8'
 
 services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+    ports:
+      - "8181:8181"
+    environment:
+      - PORT=8080
+
   transaction:
     build:
       context: ./transaction-service

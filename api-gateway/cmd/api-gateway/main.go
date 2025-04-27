@@ -1,6 +1,7 @@
 package main
 
 import (
+	client "api-gateway/internal/client/grpc"
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"log"
@@ -24,6 +25,8 @@ var requestCount = prometheus.NewCounter(
 func main() {
 	cfg := config.Load()
 
+	client.InitTransactionGRPCClient()
+
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
@@ -39,7 +42,7 @@ func main() {
 	protected := r.Group("/")
 
 	// Transactions
-	tx := handler.TransactionHandler{BaseURL: cfg.TransactionURL}
+	tx := handler.TransactionHandler{}
 	protected.POST("/transactions", tx.Create)
 	protected.GET("/transactions/:id", tx.Get)
 	protected.PATCH("/transactions/:id/status", tx.UpdateStatus)

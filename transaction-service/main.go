@@ -5,7 +5,9 @@ import (
 	"errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"google.golang.org/grpc"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	tgRPC "transaction-service/internal/grpc"
 	"transaction-service/internal/handlers"
 	"transaction-service/internal/repositories"
 	"transaction-service/internal/usecase"
@@ -46,6 +49,21 @@ func main() {
 	txRepo := repositories.NewTransactionRepository(mongoClient, "OnlineStore")
 	txUC := usecase.NewTransactionUseCase(txRepo)
 	txHandler := handlers.NewTransactionHandler(txUC)
+
+	// ----- gRPC transport --------------------------------------------------
+	go func() {
+		lis, err := net.Listen("tcp", ":50051")
+		if err != nil {
+			log.Fatalf("gRPC listen: %v", err)
+		}
+		grpcSrv := tgRPC.New(txUC)
+		log.Println("gRPC ⟶ :50051")
+		if err := grpcSrv.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			log.Fatalf("gRPC serve: %v", err)
+		}
+	}()
+
+	// ----- REST transport --------------------------------------------------
 
 	//routers
 	r := gin.Default()

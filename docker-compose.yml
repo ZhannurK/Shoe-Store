@@ -7,7 +7,7 @@ services:
     ports:
       - "8181:8181"
     environment:
-      - PORT=8080
+      - PORT=8181
 
   transaction:
     build:

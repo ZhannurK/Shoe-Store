@@ -3,6 +3,7 @@ package domain
 import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
+	pb "transaction-service/proto"
 )
 
 type TransactionStatus string
@@ -27,4 +28,25 @@ type Transaction struct {
 	Status        TransactionStatus  `json:"status" bson:"status"`
 	CreatedAt     time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedAt     time.Time          `json:"updatedAt" bson:"updatedAt"`
+}
+
+func (t *Transaction) ToProto() *pb.Transaction {
+	items := make([]*pb.CartItem, len(t.CartItems))
+	for i, c := range t.CartItems {
+		items[i] = &pb.CartItem{
+			SneakerId: c.SneakerID.Hex(),
+			Quantity:  int32(c.Quantity),
+		}
+	}
+
+	return &pb.Transaction{
+		Id:            t.ID.Hex(),
+		TransactionId: t.TransactionID,
+		UserId:        t.UserID,
+		CartItems:     items,
+		TotalAmount:   t.TotalAmount,
+		Status:        string(t.Status),
+		CreatedAt:     t.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:     t.UpdatedAt.Format(time.RFC3339),
+	}
 }

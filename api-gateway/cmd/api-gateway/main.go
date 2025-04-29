@@ -41,6 +41,12 @@ func main() {
 	// Protected group
 	protected := r.Group("/")
 
+	//users
+	r.POST("/users/signup", handler.SignUp)
+	r.GET("/users/confirm", handler.ConfirmEmail)
+	r.POST("/users/login", handler.Login)
+	r.POST("/users/change-password", handler.ChangePassword)
+
 	// Transactions
 	tx := handler.TransactionHandler{}
 	protected.POST("/transactions", tx.Create)

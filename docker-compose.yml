@@ -17,6 +17,14 @@ services:
     environment:
       - PORT=8088
 
+  user-service:
+    build:
+      context: auth-service
+    ports:
+        - "8087:8087"
+    environment:
+        - PORT=8087
+
   prometheus:
     image: prom/prometheus
     container_name: shoestore-prometheus
@@ -45,6 +53,5 @@ services:
     restart: always
 
 volumes:
-  mongo-data:
   prometheus_data:
   grafana_data:

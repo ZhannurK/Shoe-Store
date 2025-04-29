@@ -26,6 +26,7 @@ func main() {
 	cfg := config.Load()
 
 	client.InitTransactionGRPCClient()
+	client.InitAuthGRPCClient()
 
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
@@ -42,10 +43,11 @@ func main() {
 	protected := r.Group("/")
 
 	//users
-	r.POST("/users/signup", handler.SignUp)
-	r.GET("/users/confirm", handler.ConfirmEmail)
-	r.POST("/users/login", handler.Login)
-	r.POST("/users/change-password", handler.ChangePassword)
+	auth := handler.AuthHandler{}
+	r.POST("/users/signup", auth.SignUp)
+	r.GET("/users/confirm", auth.ConfirmEmail)
+	r.POST("/users/login", auth.Login)
+	r.POST("/users/change-password", auth.ChangePassword)
 
 	// Transactions
 	tx := handler.TransactionHandler{}

@@ -17,7 +17,7 @@ services:
     environment:
       - PORT=8088
 
-  user-service:
+  auth-service:
     build:
       context: auth-service
     ports:

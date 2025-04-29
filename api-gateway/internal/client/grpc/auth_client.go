@@ -32,3 +32,23 @@ func GRPCLogin(email, password string) (*proto.AuthResponse, error) {
 		Password: password,
 	})
 }
+
+func GRPCConfirmEmail(token string) error {
+	_, err := authClient.ConfirmEmail(
+		context.Background(),
+		&proto.ConfirmEmailRequest{Token: token},
+	)
+	return err
+}
+
+func GRPCChangePassword(userID, oldPwd, newPwd string) error {
+	_, err := authClient.ChangePassword(
+		context.Background(),
+		&proto.ChangePasswordRequest{
+			UserId:      userID,
+			OldPassword: oldPwd,
+			NewPassword: newPwd,
+		},
+	)
+	return err
+}

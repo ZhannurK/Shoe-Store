@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package proto;
+
+service InventoryService {
+  rpc GetSneakers(GetSneakersRequest) returns (GetSneakersResponse);
+  rpc CreateSneaker(CreateSneakerRequest) returns (SneakerResponse);
+  rpc EditSneaker(EditSneakerRequest) returns (SneakerResponse);
+  rpc RemoveSneaker(RemoveSneakerRequest) returns (RemoveSneakerResponse);
+  rpc GetPublicSneakers(GetPublicSneakersRequest) returns (GetPublicSneakersResponse);
+}
+
+message GetSneakersRequest {
+  string role = 1; // "admin"
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message CreateSneakerRequest {
+  string role = 1; // "admin"
+  string brand = 2;
+  string model = 3;
+  int32 price = 4;
+  string color = 5;
+}
+
+message EditSneakerRequest {
+  string role = 1; // "admin"
+  string id = 2;
+  string brand = 3;
+  string model = 4;
+  int32 price = 5;
+  string color = 6;
+}
+
+message RemoveSneakerRequest {
+  string role = 1; // "admin"
+  string id = 2;
+}
+
+message GetPublicSneakersRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message SneakerResponse {
+  Sneaker sneaker = 1;
+}
+
+message RemoveSneakerResponse {
+  bool success = 1;
+}
+
+message GetSneakersResponse {
+  repeated Sneaker sneakers = 1;
+  int32 total = 2;
+}
+
+message GetPublicSneakersResponse {
+  repeated Sneaker sneakers = 1;
+  int32 total = 2;
+}
+
+message Sneaker {
+  string id = 1;
+  string brand = 2;
+  string model = 3;
+  int32 price = 4;
+  string color = 5;
+}

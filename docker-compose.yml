@@ -25,6 +25,14 @@ services:
     environment:
         - PORT=8087
 
+  inventory:
+    build:
+      context: ./inventory-service
+    ports:
+      - "50051:50051"
+    environment:
+      - PORT=50051
+
   prometheus:
     image: prom/prometheus
     container_name: shoestore-prometheus

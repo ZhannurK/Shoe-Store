@@ -19,7 +19,7 @@ services:
 
   auth-service:
     build:
-      context: auth-service
+      context: ./auth-service
     ports:
         - "8087:8087"
     environment:

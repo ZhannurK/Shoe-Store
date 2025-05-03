@@ -3,10 +3,11 @@ package main
 import (
 	client "api-gateway/internal/client/grpc"
 	"errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -27,6 +28,7 @@ func main() {
 
 	client.InitTransactionGRPCClient()
 	client.InitAuthGRPCClient()
+	client.InitInventoryGRPCClient()
 
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
@@ -55,6 +57,14 @@ func main() {
 	protected.GET("/transactions/:id", tx.Get)
 	protected.PATCH("/transactions/:id/status", tx.UpdateStatus)
 	protected.DELETE("/transactions/:id", tx.Delete)
+
+	// Inventory routes
+	inv := handler.InventoryHandler{}
+	protected.GET("/inventory/sneakers", inv.GetSneakers)
+	protected.POST("/inventory/sneakers", inv.CreateSneaker)
+	protected.PUT("/inventory/sneakers", inv.EditSneaker)
+	protected.DELETE("/inventory/sneakers", inv.RemoveSneaker)
+	protected.GET("/inventory/public-sneakers", inv.GetPublicSneakers)
 
 	srv := &http.Server{
 		Addr:           "0.0.0.0:" + cfg.Port,

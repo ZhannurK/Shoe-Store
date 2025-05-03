@@ -18,8 +18,8 @@ func LoadConfig() (*Config, error) {
 	}
 
 	return &Config{
-		MongoURI: getEnv("MONGO_URI", "mongodb://localhost:27017"),
-		Port:     getEnv("PORT", "50051"),
+		MongoURI: getEnv("MONGO_CONNECT", "mongodb://localhost:27017"),
+		Port:     getEnv("PORT", "5052"),
 	}, nil
 }
 

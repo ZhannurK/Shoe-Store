@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
@@ -16,6 +16,6 @@ WORKDIR /app
 COPY --from=builder /app/inventory-service .
 COPY --from=builder /app/.env .
 
-EXPOSE 50051
+EXPOSE 5052
 
 CMD ["./inventory-service"] 

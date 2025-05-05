@@ -160,3 +160,24 @@ func (s *InventoryService) GetPublicSneakers(ctx context.Context, req *proto.Get
 		Total:    int32(total),
 	}, nil
 }
+
+func (s *InventoryService) DecreaseStock(productID string, quantity int) error {
+	id, err := primitive.ObjectIDFromHex(productID)
+	if err != nil {
+		return errors.New("invalid product ID")
+	}
+
+	sneaker, err := s.repo.GetSneakerByID(id)
+
+	if err != nil {
+		return err
+	}
+
+	if sneaker.Stock < quantity {
+		return errors.New("not enough stock")
+	}
+
+	sneaker.Stock -= quantity
+
+	return s.repo.UpdateSneakerStock(id, sneaker.Stock)
+}

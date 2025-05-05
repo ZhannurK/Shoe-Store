@@ -11,15 +11,16 @@ type TransactionHandler struct{}
 
 func (h TransactionHandler) Create(c *gin.Context) {
 	var body struct {
-		UserID    string        `json:"userId"`
-		CartItems []pb.CartItem `json:"cartItems"`
+		UserID      string        `json:"userId" binding:"required" :"userID"`
+		CartItems   []pb.CartItem `json:"cartItems" binding:"required" :"cartItems"`
+		TotalAmount float64       `json:"totalAmount" binding:"required" :"totalAmount"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	tx, err := grpcClient.GRPCCreateTransaction(body.UserID, pbToPtr(body.CartItems))
+	tx, err := grpcClient.GRPCCreateTransaction(body.UserID, pbToPtr(body.CartItems), body.TotalAmount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

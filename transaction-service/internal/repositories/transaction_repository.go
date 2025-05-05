@@ -22,24 +22,11 @@ type transactionRepo struct {
 	collection *mongo.Collection
 }
 
-//func NewTransactionRepository(client *mongo.Client, dbName string) TransactionRepository {
-//	return &transactionRepo{
-//		collection: client.Database(dbName).Collection("transactions"),
-//	}
-//}
-
 func NewTransactionRepository(client *mongo.Client, dbName string) TransactionRepository {
 	return &transactionRepo{
 		collection: client.Database(dbName).Collection("transactions"),
 	}
 }
-
-//func (r *transactionRepo) Create(ctx context.Context, tx *domain.Transaction) error {
-//	tx.CreatedAt = time.Now()
-//	tx.UpdatedAt = time.Now()
-//	_, err := r.collection.InsertOne(ctx, tx)
-//	return err
-//}
 
 func (r *transactionRepo) Create(ctx context.Context, tx *domain.Transaction) error {
 	now := time.Now()
@@ -57,20 +44,17 @@ func (r *transactionRepo) Create(ctx context.Context, tx *domain.Transaction) er
 	return err
 }
 
-//func (r *transactionRepo) UpdateStatus(ctx context.Context, transactionID string, status domain.TransactionStatus) error {
-//	filter := bson.M{"transactionId": transactionID}
-//	update := bson.M{"$set": bson.M{"status": status, "updatedAt": time.Now()}}
-//	_, err := r.collection.UpdateOne(ctx, filter, update)
-//	return err
-//}
-
 func (r *transactionRepo) UpdateStatus(
 	ctx context.Context,
 	transactionID string,
 	status domain.TransactionStatus,
 ) error {
+	id, err := primitive.ObjectIDFromHex(transactionID)
+	if err != nil {
+		return fmt.Errorf("invalid ID format: %w", err)
+	}
 
-	filter := bson.M{"transactionId": transactionID}
+	filter := bson.M{"_id": id}
 	update := bson.M{
 		"$set": bson.M{
 			"status":    status,
@@ -78,28 +62,25 @@ func (r *transactionRepo) UpdateStatus(
 		},
 	}
 
-	_, err := r.collection.UpdateOne(ctx, filter, update)
-	return err
+	res, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return fmt.Errorf("transaction not found")
+	}
+	return nil
 }
 
-//func (r *transactionRepo) GetByID(ctx context.Context, transactionID string) (*domain.Transaction, error) {
-//	var tx domain.Transaction
-//	err := r.collection.FindOne(ctx, bson.M{"transactionId": transactionID}).Decode(&tx)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return &tx, nil
-//}
+func (r *transactionRepo) GetByID(ctx context.Context, transactionID string) (*domain.Transaction, error) {
+	id, err := primitive.ObjectIDFromHex(transactionID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ID format: %w", err)
+	}
+	filter := bson.M{"_id": id}
 
-func (r *transactionRepo) GetByID(
-	ctx context.Context,
-	transactionID string,
-) (*domain.Transaction, error) {
-
-	filter := bson.M{"transactionId": transactionID}
 	var tx domain.Transaction
-
-	err := r.collection.FindOne(ctx, filter).Decode(&tx)
+	err = r.collection.FindOne(ctx, filter).Decode(&tx)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, fmt.Errorf("transaction not found")

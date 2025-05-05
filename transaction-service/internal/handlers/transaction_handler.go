@@ -14,23 +14,34 @@ type TransactionHandler struct {
 	UC *usecase.TransactionUseCase
 }
 
+type createTransactionRequest struct {
+	UserID      string            `json:"userId" binding:"required" :"userID"`
+	CartItems   []domain.CartItem `json:"cartItems" binding:"required" :"cartItems"`
+	TotalAmount int               `json:"totalAmount" binding:"required" :"totalAmount"`
+}
+
 func NewTransactionHandler(uc *usecase.TransactionUseCase) *TransactionHandler {
 	return &TransactionHandler{UC: uc}
 }
 
 func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
-	var tx domain.Transaction
-	if err := c.ShouldBindJSON(&tx); err != nil {
+	var req createTransactionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	tx.TransactionID = primitive.NewObjectID().Hex()
-	tx.Status = domain.StatusPending
-	tx.CreatedAt = time.Now()
-	tx.UpdatedAt = time.Now()
+	tx := &domain.Transaction{
+		ID:          primitive.NewObjectID(),
+		UserID:      req.UserID,
+		CartItems:   req.CartItems,
+		TotalAmount: float64(req.TotalAmount),
+		Status:      domain.StatusPending,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
 
-	if err := h.UC.Create(c.Request.Context(), &tx); err != nil {
+	if err := h.UC.Create(c.Request.Context(), tx); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create transaction"})
 		return
 	}

@@ -41,16 +41,21 @@ func (r *MongoRepository) GetSneakers(ctx context.Context, page, limit int32) ([
 	skip64 := int64(skip)
 	limit64 := int64(limit)
 
-	options := &options.FindOptions{
+	option := &options.FindOptions{
 		Skip:  &skip64,
 		Limit: &limit64,
 	}
 
-	cursor, err := r.collection.Find(ctx, bson.M{}, options)
+	cursor, err := r.collection.Find(ctx, bson.M{}, option)
 	if err != nil {
 		return nil, 0, err
 	}
-	defer cursor.Close(ctx)
+	defer func(cursor *mongo.Cursor, ctx context.Context) {
+		err := cursor.Close(ctx)
+		if err != nil {
+
+		}
+	}(cursor, ctx)
 
 	var sneakers []*models.Sneaker
 	if err = cursor.All(ctx, &sneakers); err != nil {
@@ -76,16 +81,21 @@ func (r *MongoRepository) GetPublicSneakers(ctx context.Context, page, limit int
 	skip64 := int64(skip)
 	limit64 := int64(limit)
 
-	options := &options.FindOptions{
+	option := &options.FindOptions{
 		Skip:  &skip64,
 		Limit: &limit64,
 	}
 
-	cursor, err := r.collection.Find(ctx, bson.M{}, options)
+	cursor, err := r.collection.Find(ctx, bson.M{}, option)
 	if err != nil {
 		return nil, 0, err
 	}
-	defer cursor.Close(ctx)
+	defer func(cursor *mongo.Cursor, ctx context.Context) {
+		err := cursor.Close(ctx)
+		if err != nil {
+
+		}
+	}(cursor, ctx)
 
 	var sneakers []*models.Sneaker
 	if err = cursor.All(ctx, &sneakers); err != nil {
@@ -116,5 +126,23 @@ func (r *MongoRepository) UpdateSneaker(ctx context.Context, id primitive.Object
 
 func (r *MongoRepository) DeleteSneaker(ctx context.Context, id primitive.ObjectID) error {
 	_, err := r.collection.DeleteOne(ctx, bson.M{"_id": id})
+	return err
+}
+
+func (r *MongoRepository) GetSneakerByID(id primitive.ObjectID) (*models.Sneaker, error) {
+	var sneaker models.Sneaker
+	err := r.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&sneaker)
+	if err != nil {
+		return nil, err
+	}
+	return &sneaker, nil
+}
+
+func (r *MongoRepository) UpdateSneakerStock(id primitive.ObjectID, newStock int) error {
+	_, err := r.collection.UpdateOne(
+		context.TODO(),
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{"stock": newStock}},
+	)
 	return err
 }

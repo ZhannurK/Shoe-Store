@@ -34,6 +34,11 @@ services:
       - PORT=5052
       - MONGO_CONNECT=mongodb+srv://app:wSxRgMArSwXKS9Rv@cluster.dnxyg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster
 
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+
   prometheus:
     image: prom/prometheus
     container_name: shoestore-prometheus

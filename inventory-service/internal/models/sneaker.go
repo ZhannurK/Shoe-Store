@@ -10,4 +10,5 @@ type Sneaker struct {
 	Model string             `json:"model" bson:"model"`
 	Price int                `json:"price" bson:"price"`
 	Color string             `json:"color" bson:"color"`
+	Stock int                `json:"stock" bson:"stock"`
 }

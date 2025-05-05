@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/nats-io/nats.go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
@@ -47,7 +48,13 @@ func main() {
 	//repositories / use cases
 	mongoClient := repositories.InitMongo(mongoURI)
 	txRepo := repositories.NewTransactionRepository(mongoClient, "OnlineStore")
-	txUC := usecase.NewTransactionUseCase(txRepo)
+	nc, err := nats.Connect("nats://nats:4222")
+	if err != nil {
+		log.Fatalf("Failed to connect to NATS: %v", err)
+	}
+	defer nc.Close()
+
+	txUC := usecase.NewTransactionUseCase(txRepo, nc)
 	txHandler := handlers.NewTransactionHandler(txUC)
 
 	// ----- gRPC transport --------------------------------------------------

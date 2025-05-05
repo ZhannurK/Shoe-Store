@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"context"
-
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"transaction-service/internal/domain"
@@ -38,10 +38,9 @@ func (s *Server) CreateTransaction(
 	}
 
 	tx := &domain.Transaction{
-		TransactionID: in.TransactionId,
-		UserID:        in.UserId,
-		TotalAmount:   in.TotalAmount,
-		Status:        domain.TransactionStatus(in.Status),
+		UserID:      in.UserId,
+		TotalAmount: in.TotalAmount,
+		Status:      domain.TransactionStatus(in.Status),
 	}
 
 	tx.CartItems = make([]domain.CartItem, len(in.CartItems))
@@ -80,12 +79,18 @@ func (s *Server) UpdateTransactionStatus(
 	req *pb.UpdateTransactionStatusRequest,
 ) (*pb.UpdateTransactionStatusResponse, error) {
 
+	fmt.Println("status: ", req.Status)
+
 	if err := s.uc.UpdateStatus(ctx, req.Id,
 		domain.TransactionStatus(req.Status)); err != nil {
 		return nil, err
 	}
 
-	updated, _ := s.uc.GetByID(ctx, req.Id)
+	updated, err := s.uc.GetByID(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.UpdateTransactionStatusResponse{
 		Transaction: updated.ToProto(),
 	}, nil

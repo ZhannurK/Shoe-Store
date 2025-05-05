@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/nats-io/nats.go"
+	"github.com/shoe-store/inventory-service/internal/natsadapter"
 	"log"
 	"os"
 	"os/signal"
@@ -26,7 +28,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
-	defer client.Disconnect(context.Background())
+	defer func(client *mongo.Client, ctx context.Context) {
+		err := client.Disconnect(ctx)
+		if err != nil {
+			log.Printf("Error disconnecting MongoDB: %v", err)
+		} else {
+			log.Println("MongoDB disconnected")
+		}
+	}(client, context.Background())
 
 	// Проверяем подключение к MongoDB
 	err = client.Ping(context.Background(), nil)
@@ -40,6 +49,14 @@ func main() {
 
 	// Initialize service
 	svc := service.NewInventoryService(repo)
+
+	nc, err := nats.Connect("nats://nats:4222")
+	if err != nil {
+		log.Fatalf("Failed to connect to NATS: %v", err)
+	}
+	defer nc.Close()
+
+	natsadapter.SubscribeToOrderCreated(nc, svc)
 
 	// Initialize server
 	srv := server.NewServer(svc)

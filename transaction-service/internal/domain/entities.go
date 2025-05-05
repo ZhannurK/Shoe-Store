@@ -20,14 +20,13 @@ type CartItem struct {
 }
 
 type Transaction struct {
-	ID            primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	TransactionID string             `bson:"transactionId" json:"transactionId"`
-	UserID        string             `json:"userId" bson:"userId"`
-	CartItems     []CartItem         `json:"cartItems" bson:"cartItems"`
-	TotalAmount   float64            `json:"totalAmount" bson:"totalAmount"`
-	Status        TransactionStatus  `json:"status" bson:"status"`
-	CreatedAt     time.Time          `json:"createdAt" bson:"createdAt"`
-	UpdatedAt     time.Time          `json:"updatedAt" bson:"updatedAt"`
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	UserID      string             `json:"userId" bson:"userId"`
+	CartItems   []CartItem         `json:"cartItems" bson:"cartItems"`
+	TotalAmount float64            `json:"totalAmount" bson:"totalAmount"`
+	Status      TransactionStatus  `json:"status" bson:"status"`
+	CreatedAt   time.Time          `json:"createdAt" bson:"createdAt"`
+	UpdatedAt   time.Time          `json:"updatedAt" bson:"updatedAt"`
 }
 
 func (t *Transaction) ToProto() *pb.Transaction {
@@ -40,13 +39,12 @@ func (t *Transaction) ToProto() *pb.Transaction {
 	}
 
 	return &pb.Transaction{
-		Id:            t.ID.Hex(),
-		TransactionId: t.TransactionID,
-		UserId:        t.UserID,
-		CartItems:     items,
-		TotalAmount:   t.TotalAmount,
-		Status:        string(t.Status),
-		CreatedAt:     t.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:     t.UpdatedAt.Format(time.RFC3339),
+		Id:          t.ID.Hex(),
+		UserId:      t.UserID,
+		CartItems:   items,
+		TotalAmount: t.TotalAmount,
+		Status:      string(t.Status),
+		CreatedAt:   t.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:   t.UpdatedAt.Format(time.RFC3339),
 	}
 }

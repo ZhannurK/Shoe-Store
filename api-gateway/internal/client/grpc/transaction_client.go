@@ -17,11 +17,12 @@ func InitTransactionGRPCClient() {
 	txClient = pb.NewTransactionServiceClient(conn)
 }
 
-func GRPCCreateTransaction(userID string, items []*pb.CartItem) (*pb.Transaction, error) {
+func GRPCCreateTransaction(userID string, items []*pb.CartItem, totalAmount float64) (*pb.Transaction, error) {
 	req := &pb.CreateTransactionRequest{
 		Transaction: &pb.Transaction{
-			UserId:    userID,
-			CartItems: items,
+			UserId:      userID,
+			CartItems:   items,
+			TotalAmount: totalAmount,
 		},
 	}
 

@@ -6,7 +6,9 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -19,18 +21,55 @@ type AuthUseCase interface {
 	ConfirmEmail(ctx context.Context, token string) error
 	Login(ctx context.Context, email, password string) (string, *entities.User, error)
 	ChangePassword(ctx context.Context, email, oldPwd, newPwd string) error
+	GetUserByID(id string) (*entities.User, error)
 }
 
-type authUseCase struct {
+type Cache interface {
+	Get(key string) (string, error)
+	Set(key string, value string, ttl time.Duration) error
+	Del(key string) error
+}
+
+type AuthUsecase struct {
 	repo   repositories.UserRepository
 	jwtKey []byte
+	cache  Cache
 }
 
-func NewAuthUseCase(repo repositories.UserRepository, jwtKey []byte) AuthUseCase {
-	return &authUseCase{repo: repo, jwtKey: jwtKey}
+func NewAuthUseCase(repo *repositories.UserMongoRepo, jwtKey []byte, cache Cache) *AuthUsecase {
+	return &AuthUsecase{repo: repo, jwtKey: jwtKey, cache: cache}
 }
 
-func (uc *authUseCase) SignUp(ctx context.Context, email, password, name string) (string, error) {
+func (uc *AuthUsecase) GetUserByID(id string) (*entities.User, error) {
+	cacheKey := "user:" + id
+	if cached, _ := uc.cache.Get(cacheKey); cached != "" {
+		var user entities.User
+		_ = json.Unmarshal([]byte(cached), &user)
+		return &user, nil
+	}
+
+	user, err := uc.repo.GetUserByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	data, _ := json.Marshal(user)
+	err = uc.cache.Set(cacheKey, string(data), 5*time.Minute)
+	if err != nil {
+		return nil, err
+	}
+
+	if cached, _ := uc.cache.Get(cacheKey); cached != "" {
+		log.Println("✅ [CACHE HIT] Returning cached value for", cacheKey)
+		return user, nil
+	} else {
+		log.Println("❌ [CACHE MISS] Fetching from DB and caching", cacheKey)
+	}
+
+	return user, nil
+}
+
+func (uc *AuthUsecase) SignUp(ctx context.Context, email, password, name string) (string, error) {
 	if _, err := uc.repo.FindByEmail(ctx, email); err == nil {
 		return "", errors.New("user already exists")
 	}
@@ -62,20 +101,57 @@ func (uc *authUseCase) SignUp(ctx context.Context, email, password, name string)
 	return token, nil
 }
 
-func (uc *authUseCase) ConfirmEmail(ctx context.Context, token string) error {
+//func (uc *AuthUsecase) ConfirmEmail(ctx context.Context, token string) error {
+//	user, err := uc.repo.FindByToken(ctx, token)
+//	if err != nil {
+//		return err
+//	}
+//	user.Verified = true
+//	user.ConfirmationToken = ""
+//	return uc.repo.Update(ctx, user)
+//}
+
+func (uc *AuthUsecase) ConfirmEmail(ctx context.Context, token string) error {
 	user, err := uc.repo.FindByToken(ctx, token)
 	if err != nil {
 		return err
 	}
 	user.Verified = true
 	user.ConfirmationToken = ""
-	return uc.repo.Update(ctx, user)
+
+	err = uc.repo.Update(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	err = uc.cache.Del("user:" + user.ID.Hex())
+	if err != nil {
+		return err
+	}
+
+	data, _ := json.Marshal(user)
+	err = uc.cache.Set("user:"+user.Email, string(data), 0)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (uc *authUseCase) Login(ctx context.Context, email, password string) (string, *entities.User, error) {
-	user, err := uc.repo.FindByEmail(ctx, email)
-	if err != nil {
-		return "", nil, errors.New("invalid credentials")
+func (uc *AuthUsecase) Login(ctx context.Context, email, password string) (string, *entities.User, error) {
+	cacheKey := "user:" + email
+	var user *entities.User
+	if cached, _ := uc.cache.Get(cacheKey); cached != "" {
+		log.Println("✅ [CACHE HIT] Returning cached value for", cacheKey)
+		_ = json.Unmarshal([]byte(cached), &user)
+	} else {
+		log.Println("❌ [CACHE MISS] Fetching from DB and caching", cacheKey)
+		var err error
+		user, err = uc.repo.FindByEmail(ctx, email)
+		if err != nil {
+			return "", nil, errors.New("invalid credentials")
+		}
+		data, _ := json.Marshal(user)
+		err = uc.cache.Set(cacheKey, string(data), 5*time.Minute)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
@@ -98,7 +174,23 @@ func (uc *authUseCase) Login(ctx context.Context, email, password string) (strin
 	return tokenStr, user, nil
 }
 
-func (uc *authUseCase) ChangePassword(ctx context.Context, email, oldPwd, newPwd string) error {
+//func (uc *AuthUsecase) ChangePassword(ctx context.Context, email, oldPwd, newPwd string) error {
+//	user, err := uc.repo.FindByEmail(ctx, email)
+//	if err != nil {
+//		return err
+//	}
+//	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPwd)); err != nil {
+//		return errors.New("incorrect old password")
+//	}
+//	newHashed, err := hashPassword(newPwd)
+//	if err != nil {
+//		return err
+//	}
+//	user.Password = newHashed
+//	return uc.repo.Update(ctx, user)
+//}
+
+func (uc *AuthUsecase) ChangePassword(ctx context.Context, email, oldPwd, newPwd string) error {
 	user, err := uc.repo.FindByEmail(ctx, email)
 	if err != nil {
 		return err
@@ -111,7 +203,23 @@ func (uc *authUseCase) ChangePassword(ctx context.Context, email, oldPwd, newPwd
 		return err
 	}
 	user.Password = newHashed
-	return uc.repo.Update(ctx, user)
+
+	err = uc.repo.Update(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	err = uc.cache.Del("user:" + user.Email)
+	if err != nil {
+		return err
+	}
+
+	data, _ := json.Marshal(user)
+	err = uc.cache.Set("user:"+user.Email, string(data), 0)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func generateRandomToken() (string, error) {

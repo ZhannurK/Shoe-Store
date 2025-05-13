@@ -1,6 +1,7 @@
 package main
 
 import (
+	"auth-service/internal/cache"
 	"auth-service/internal/handler"
 	"auth-service/internal/repositories"
 	"auth-service/internal/server_grpc"
@@ -24,7 +25,8 @@ func main() {
 
 	userRepo := repositories.NewUserMongoRepo(client, "db", "users")
 
-	authUC := usecase.NewAuthUseCase(userRepo, jwtKey)
+	redisCache := cache.NewRedisCache("redis:6379")
+	authUC := usecase.NewAuthUseCase(userRepo, jwtKey, redisCache)
 
 	go func() {
 		lis, err := net.Listen("tcp", ":50051")

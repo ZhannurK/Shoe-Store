@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"transaction-service/internal/cache"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -54,7 +55,8 @@ func main() {
 	}
 	defer nc.Close()
 
-	txUC := usecase.NewTransactionUseCase(txRepo, nc)
+	redisCache := cache.NewRedisCache("redis:6379")
+	txUC := usecase.NewTransactionUseCase(txRepo, redisCache, nc)
 	txHandler := handlers.NewTransactionHandler(txUC)
 
 	// ----- gRPC transport --------------------------------------------------

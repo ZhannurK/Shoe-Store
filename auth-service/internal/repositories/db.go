@@ -39,7 +39,3 @@ func ConnectDB() *mongo.Client {
 	fmt.Println("✅ Connected to MongoDB")
 	return client
 }
-
-func GetCollection(client *mongo.Client, dbName, collectionName string) *mongo.Collection {
-	return client.Database(dbName).Collection(collectionName)
-}

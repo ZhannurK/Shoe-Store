@@ -13,6 +13,6 @@ type Repository interface {
 	GetPublicSneakers(ctx context.Context, page, limit int32) ([]*models.Sneaker, int64, error)
 	UpdateSneaker(ctx context.Context, id primitive.ObjectID, sneaker *models.Sneaker) error
 	DeleteSneaker(ctx context.Context, id primitive.ObjectID) error
-	GetSneakerByID(id primitive.ObjectID) (*models.Sneaker, error)
-	UpdateSneakerStock(id primitive.ObjectID, newStock int) error
+	GetSneakerByID(ctx context.Context, id primitive.ObjectID) (*models.Sneaker, error)
+	UpdateSneakerStock(ctx context.Context, id primitive.ObjectID, newStock int) error
 }

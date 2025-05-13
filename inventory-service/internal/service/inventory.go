@@ -2,8 +2,13 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
+	"time"
 
+	"github.com/shoe-store/inventory-service/internal/cache"
 	"github.com/shoe-store/inventory-service/internal/models"
 	"github.com/shoe-store/inventory-service/internal/repository"
 	"github.com/shoe-store/inventory-service/proto"
@@ -74,6 +79,9 @@ func (s *InventoryService) CreateSneaker(ctx context.Context, req *proto.CreateS
 		return nil, err
 	}
 
+	// Инвалидация кеша всех списков
+	s.invalidatePublicSneakersCache(ctx)
+
 	return &proto.SneakerResponse{
 		Sneaker: &proto.Sneaker{
 			Id:    createdSneaker.ID.Hex(),
@@ -107,6 +115,8 @@ func (s *InventoryService) EditSneaker(ctx context.Context, req *proto.EditSneak
 		return nil, err
 	}
 
+	s.invalidatePublicSneakersCache(ctx)
+
 	return &proto.SneakerResponse{
 		Sneaker: &proto.Sneaker{
 			Id:    id.Hex(),
@@ -133,12 +143,28 @@ func (s *InventoryService) RemoveSneaker(ctx context.Context, req *proto.RemoveS
 		return nil, err
 	}
 
+	s.invalidatePublicSneakersCache(ctx)
+
 	return &proto.RemoveSneakerResponse{
 		Success: true,
 	}, nil
 }
 
 func (s *InventoryService) GetPublicSneakers(ctx context.Context, req *proto.GetPublicSneakersRequest) (*proto.GetPublicSneakersResponse, error) {
+	cacheKey := fmt.Sprintf("public_sneakers_list:%d:%d", req.Page, req.Limit)
+
+	// 1. Пробуем получить из кеша
+	cached, err := cache.Rdb.Get(ctx, cacheKey).Result()
+	if err == nil {
+		log.Printf("[CACHE HIT] Key: %s", cacheKey)
+		var resp proto.GetPublicSneakersResponse
+		if err := json.Unmarshal([]byte(cached), &resp); err == nil {
+			return &resp, nil
+		}
+	}
+	log.Printf("[CACHE MISS] Key: %s", cacheKey)
+
+	// 2. Если нет в кеше — получаем из БД
 	sneakers, total, err := s.repo.GetPublicSneakers(ctx, req.Page, req.Limit)
 	if err != nil {
 		return nil, err
@@ -155,10 +181,17 @@ func (s *InventoryService) GetPublicSneakers(ctx context.Context, req *proto.Get
 		}
 	}
 
-	return &proto.GetPublicSneakersResponse{
+	result := &proto.GetPublicSneakersResponse{
 		Sneakers: protoSneakers,
 		Total:    int32(total),
-	}, nil
+	}
+
+	// 3. Сохраняем в кеш на 5 минут
+	bytes, _ := json.Marshal(result)
+	cache.Rdb.Set(ctx, cacheKey, bytes, 5*time.Minute)
+	log.Printf("[CACHE SET] Key: %s", cacheKey)
+
+	return result, nil
 }
 
 func (s *InventoryService) DecreaseStock(productID string, quantity int) error {
@@ -167,8 +200,8 @@ func (s *InventoryService) DecreaseStock(productID string, quantity int) error {
 		return errors.New("invalid product ID")
 	}
 
-	sneaker, err := s.repo.GetSneakerByID(id)
-
+	ctx := context.Background()
+	sneaker, err := s.repo.GetSneakerByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -179,5 +212,14 @@ func (s *InventoryService) DecreaseStock(productID string, quantity int) error {
 
 	sneaker.Stock -= quantity
 
-	return s.repo.UpdateSneakerStock(id, sneaker.Stock)
+	return s.repo.UpdateSneakerStock(ctx, id, sneaker.Stock)
+}
+
+// Удаляем все кеши списков (на случай пагинации)
+func (s *InventoryService) invalidatePublicSneakersCache(ctx context.Context) {
+	iter := cache.Rdb.Scan(ctx, 0, "public_sneakers_list*", 0).Iterator()
+	for iter.Next(ctx) {
+		cache.Rdb.Del(ctx, iter.Val())
+		log.Printf("[CACHE DEL] Key: %s", iter.Val())
+	}
 }

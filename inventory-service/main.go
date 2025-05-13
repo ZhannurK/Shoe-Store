@@ -2,13 +2,15 @@ package main
 
 import (
 	"context"
-	"github.com/nats-io/nats.go"
-	"github.com/shoe-store/inventory-service/internal/natsadapter"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/nats-io/nats.go"
+	"github.com/shoe-store/inventory-service/internal/natsadapter"
+
+	"github.com/shoe-store/inventory-service/internal/cache"
 	"github.com/shoe-store/inventory-service/internal/config"
 	"github.com/shoe-store/inventory-service/internal/repository"
 	"github.com/shoe-store/inventory-service/internal/server"
@@ -22,6 +24,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+
+	// Initialize Redis
+	cache.InitRedis()
 
 	// Connect to MongoDB
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(cfg.MongoURI))
@@ -37,7 +42,6 @@ func main() {
 		}
 	}(client, context.Background())
 
-	// Проверяем подключение к MongoDB
 	err = client.Ping(context.Background(), nil)
 	if err != nil {
 		log.Fatalf("Failed to ping MongoDB: %v", err)

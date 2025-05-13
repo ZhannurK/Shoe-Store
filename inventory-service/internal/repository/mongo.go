@@ -50,12 +50,7 @@ func (r *MongoRepository) GetSneakers(ctx context.Context, page, limit int32) ([
 	if err != nil {
 		return nil, 0, err
 	}
-	defer func(cursor *mongo.Cursor, ctx context.Context) {
-		err := cursor.Close(ctx)
-		if err != nil {
-
-		}
-	}(cursor, ctx)
+	defer cursor.Close(ctx)
 
 	var sneakers []*models.Sneaker
 	if err = cursor.All(ctx, &sneakers); err != nil {
@@ -90,12 +85,7 @@ func (r *MongoRepository) GetPublicSneakers(ctx context.Context, page, limit int
 	if err != nil {
 		return nil, 0, err
 	}
-	defer func(cursor *mongo.Cursor, ctx context.Context) {
-		err := cursor.Close(ctx)
-		if err != nil {
-
-		}
-	}(cursor, ctx)
+	defer cursor.Close(ctx)
 
 	var sneakers []*models.Sneaker
 	if err = cursor.All(ctx, &sneakers); err != nil {
@@ -129,18 +119,18 @@ func (r *MongoRepository) DeleteSneaker(ctx context.Context, id primitive.Object
 	return err
 }
 
-func (r *MongoRepository) GetSneakerByID(id primitive.ObjectID) (*models.Sneaker, error) {
+func (r *MongoRepository) GetSneakerByID(ctx context.Context, id primitive.ObjectID) (*models.Sneaker, error) {
 	var sneaker models.Sneaker
-	err := r.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&sneaker)
+	err := r.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&sneaker)
 	if err != nil {
 		return nil, err
 	}
 	return &sneaker, nil
 }
 
-func (r *MongoRepository) UpdateSneakerStock(id primitive.ObjectID, newStock int) error {
+func (r *MongoRepository) UpdateSneakerStock(ctx context.Context, id primitive.ObjectID, newStock int) error {
 	_, err := r.collection.UpdateOne(
-		context.TODO(),
+		ctx,
 		bson.M{"_id": id},
 		bson.M{"$set": bson.M{"stock": newStock}},
 	)

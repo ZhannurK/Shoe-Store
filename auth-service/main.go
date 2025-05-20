@@ -7,14 +7,22 @@ import (
 	"auth-service/internal/server_grpc"
 	"auth-service/internal/usecase"
 	"auth-service/proto"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
-
 	"log"
 	"net"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
+)
+
+var requestCount = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Name: "shoestore_requests_total",
+		Help: "Total number of HTTP requests received",
+	},
 )
 
 func main() {
@@ -47,6 +55,16 @@ func main() {
 		r := mux.NewRouter()
 		authHandler := handler.NewAuthHandler(authUC)
 		authHandler.RegisterRoutes(r)
+
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				requestCount.Inc()
+				next.ServeHTTP(w, req)
+			})
+		})
+
+		prometheus.MustRegister(requestCount)
+		r.Handle("/metrics", promhttp.Handler())
 
 		log.Println("🌐 REST server running on port 8087...")
 		if err := http.ListenAndServe(":8087", r); err != nil {

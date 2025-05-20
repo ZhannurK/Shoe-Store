@@ -32,6 +32,7 @@ services:
       context: ./inventory-service
     ports:
       - "5052:5052"
+      - "5053:5053"
     environment:
       - REDIS_ADDR=redis:6379
       - PORT=5052

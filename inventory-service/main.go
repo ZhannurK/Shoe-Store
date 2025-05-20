@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"os"
 	"os/signal"
@@ -19,12 +22,36 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+var requestCount = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Name: "shoestore_requests_total",
+		Help: "Total number of HTTP requests received",
+	},
+)
+
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
+	go func() {
+		// Prometheus metrics
+		r := gin.Default()
 
+		prometheus.MustRegister(requestCount)
+
+		r.Use(func(c *gin.Context) {
+			requestCount.Inc()
+			c.Next()
+		})
+
+		r.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+		err := r.Run(":5053")
+		if err != nil {
+			return
+		}
+	}()
 	// Initialize Redis
 	cache.InitRedis()
 

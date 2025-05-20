@@ -86,13 +86,8 @@ func (s *Server) UpdateTransactionStatus(
 		return nil, err
 	}
 
-	updated, err := s.uc.GetByID(ctx, req.Id)
-	if err != nil {
-		return nil, err
-	}
-
 	return &pb.UpdateTransactionStatusResponse{
-		Transaction: updated.ToProto(),
+		Transaction: (&domain.Transaction{}).ToProto(),
 	}, nil
 }
 

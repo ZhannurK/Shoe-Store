@@ -42,6 +42,7 @@ func (u *TransactionUseCase) UpdateStatus(ctx context.Context, transactionID str
 	if err != nil {
 		return err
 	}
+	log.Println("[CACHE] Deleted transaction:", transactionID)
 
 	if status == domain.StatusPaid {
 		tx, err := u.Repo.GetByID(ctx, transactionID)
@@ -74,13 +75,14 @@ func (u *TransactionUseCase) UpdateStatus(ctx context.Context, transactionID str
 
 func (u *TransactionUseCase) GetByID(ctx context.Context, transactionID string) (*domain.Transaction, error) {
 	cacheKey := "transaction:" + transactionID
-
 	if cached, _ := u.Cache.Get(cacheKey); cached != "" {
+		log.Println("✅ [CACHE HIT] Returning cached value for", cacheKey)
 		var tx domain.Transaction
 		_ = json.Unmarshal([]byte(cached), &tx)
 		return &tx, nil
+	} else {
+		log.Println("❌ [CACHE MISS] Fetching from DB and caching", cacheKey)
 	}
-
 	tx, err := u.Repo.GetByID(ctx, transactionID)
 	if err != nil {
 		return nil, err
@@ -91,13 +93,6 @@ func (u *TransactionUseCase) GetByID(ctx context.Context, transactionID string) 
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	if cached, _ := u.Cache.Get(cacheKey); cached != "" {
-		log.Println("✅ [CACHE HIT] Returning cached value for", cacheKey)
-		return tx, nil
-	} else {
-		log.Println("❌ [CACHE MISS] Fetching from DB and caching", cacheKey)
 	}
 
 	return tx, nil

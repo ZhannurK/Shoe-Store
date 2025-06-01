@@ -41,6 +41,8 @@ func main() {
 	})
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
+	r.POST("/alertmanager/webhook", handler.AlertWebhookHandler)
+
 	// Protected group
 	protected := r.Group("/")
 

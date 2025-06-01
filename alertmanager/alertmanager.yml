@@ -1,0 +1,9 @@
+route:
+  group_wait: 5s
+  receiver: webhook_receiver
+
+receivers:
+  - name: webhook_receiver
+    webhook_configs:
+      - url: 'http://api-gateway:8181/alertmanager/webhook'
+        send_resolved: false

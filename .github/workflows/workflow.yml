@@ -1,5 +1,5 @@
 name: CI/CD Pipeline
-
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on:
   push:
     branches:
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [api-gateway, auth-service, inventory-service, transaction-service]
+        service: [ api-gateway, auth-service, inventory-service, transaction-service ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,4 +62,6 @@ jobs:
           context: ./${{ matrix.service }}
           file: ./${{ matrix.service }}/Dockerfile
           push: true
-          tags: docker.io/zhannurchik/${{ matrix.service }}:latest
+          tags: |
+            docker.io/zhannurchik/${{ matrix.service }}:latest
+            docker.io/zhannurchik/${{ matrix.service }}:${{ github.sha }}

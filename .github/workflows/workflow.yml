@@ -63,13 +63,3 @@ jobs:
           file: ./${{ matrix.service }}/Dockerfile
           push: true
           tags: docker.io/zhannurchik/${{ matrix.service }}:latest
-
-  deploy:
-    needs: build-and-push-docker
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy with docker-compose
-        run: |
-          docker-compose down
-          docker-compose pull
-          docker-compose up -d

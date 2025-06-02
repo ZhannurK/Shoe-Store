@@ -152,11 +152,3 @@ Below is a condensed list of RPCs; for full detail open the generated **Swagger*
 
 * Prometheus scrapes `/metrics` every 15 s (config in `deploy/prometheus.yml`).
 * Grafana is pre‑provisioned with **Shoe‑Store Overview** dashboard (ID 1). Import your own JSON to extend.
-
----
-
-## 🤝 Contributing
-
-1. **Fork** → `git checkout -b feature/xyz`
-2. **Commit** using conventional messages.
-3. **Push & PR** – CI must pass.

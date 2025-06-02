@@ -10,8 +10,8 @@ on:
 
 env:
   DOCKER_REGISTRY: docker.io
-  BACKEND_IMAGE_NAME: ZhannurK/shoestore-backend
-  FRONTEND_IMAGE_NAME: ZhannurK/shoestore-frontend
+  BACKEND_IMAGE_NAME: zhannurchik/shoestore-backend
+  FRONTEND_IMAGE_NAME: zhannurchik/shoestore-frontend
 
 jobs:
   build-test-and-push:

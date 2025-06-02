@@ -2,3 +2,4 @@
 /inventory-service/.env
 /transaction-service/.env
 /api-gateway/.env
+/terraform/terraform.exe

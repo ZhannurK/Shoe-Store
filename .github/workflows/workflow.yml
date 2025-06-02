@@ -1,0 +1,42 @@
+# .github/workflows/ci-cd.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up Go environment
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'  # Adjust if needed
+
+      # Build Go backend
+      - name: Build backend
+        run: |
+          cd backend
+          go build ./...
+
+      # Run tests
+      - name: Run tests
+        run: |
+          cd backend
+          go test ./...
+
+      # Build Docker image (optional, for verification)
+      - name: Build Docker image
+        run: |
+          docker build -t shoestore-backend ./backend

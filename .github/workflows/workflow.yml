@@ -65,3 +65,4 @@ jobs:
           tags: |
             docker.io/zhannurchik/${{ matrix.service }}:latest
             docker.io/zhannurchik/${{ matrix.service }}:${{ github.sha }}
+          no-cache: true

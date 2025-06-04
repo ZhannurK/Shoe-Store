@@ -1,0 +1,4 @@
+/auth-service/.env
+/inventory-service/.env
+/transaction-service/.env
+/api-gateway/.env
